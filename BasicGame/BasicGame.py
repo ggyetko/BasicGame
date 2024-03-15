@@ -391,7 +391,7 @@ player.display()
 
 # doornames (all will be used) and potential (minx,miny) locations (not all used)
 doorList = ["Blue","Red","Ancient","Golden","Ethereal","Rose","Glass"]
-houseCorners = [(12,2), (20,2), (30,10), (42,2), (52,6), (2,16), (11,12), (23,16), (41,15), (50,14)]
+houseCorners = [(12,2), (20,2), (30,10), (37,2), (50,6), (2,16), (11,12), (23,16), (39,15), (49,14)]
 
 mp1 = Map(60,25)
 #Start House
