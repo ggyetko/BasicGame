@@ -4,6 +4,7 @@ from pydoc import visiblename
 import string
 from os import system, name
 from time import sleep
+from tkinter import HIDDEN
 from unittest.case import _AssertRaisesContext
 
 class Colors:
@@ -35,6 +36,7 @@ def getChar(permitted, allowBs, allowCr):
     ch = " "
     while str(ch) not in permitted:
         ch = msvcrt.getch().decode("utf-8")
+        ch = ch.lower()
         if ord(ch) == 13:
             if allowCr:
                 return chr(13)
@@ -143,7 +145,13 @@ class Map:
         self.addWall(0,0,self.x-1,0)
         self.addWall(0,1,0,self.y-1)
         self.addWall(self.x-1,1,self.x-1,self.y-1)
-        self.addWall(0,self.y-1,self.x-1,self.y-1)       
+        self.addWall(0,self.y-1,self.x-1,self.y-1)     
+        
+    def isInAnyHouse(self, x, y):
+        for h in self.houses:
+            if h.isWithinWall(x,y):
+                return True
+        return False
         
     def setVictoryPoint(self, x, y):
         self.victoryPoint = (x,y)
@@ -201,6 +209,10 @@ class Map:
                         # if we're over top of a potential pick-up item, note it
                         if (x,y) in self.contents and isinstance(self.contents[(x,y)],InvObject):
                             mr.pickup = True
+                        if (x,y) == self.victoryPoint:
+                            mr.victory = True
+                    elif (x,y) == self.victoryPoint:
+                        line += Colors.YELLOW + "!"
                     elif (x,y) in self.contents:
                         line += Colors.LIGHT_CYAN + self.contents[(x,y)].getLetter()
                     elif self.walls[x][y]:
@@ -326,15 +338,18 @@ def runGame(player):
             message = ""
         else:
             print ("")
-        print("{}\n Move: ASWD  (E)xamine {}{}e(X)it".format(\
+        print("{}\n Move: ASWD  (E)xamine {}{}{}e(X)it".format(\
             Colors.WHITE,\
             "(P)ick-up " if mr.pickup else "",\
-            "(U)nlock " if unlockTuple else ""))
+            "(U)nlock " if unlockTuple else "",\
+            "(V)ictory " if mr.victory else ""))
         resp = "asdwex"
         if mr.pickup:
             resp += "p"
         if unlockTuple:
             resp += "u"
+        if mr.victory:
+            resp += "v"
         ch = getChar(resp,False,False)
     
         if ch == "x":
@@ -354,6 +369,9 @@ def runGame(player):
                 message = "You unlocked " + mp1.getObjName(unlockTuple)
             else:
                 blockedReason = result
+        elif ch == "v":
+            print (Colors.GREEN + "!!! YOU WIN !!!")
+            playing = False
         else:
             nextLoc = player.getLocAfterMove(moveDict[ch])
             #print (nextLoc)
@@ -364,24 +382,55 @@ def runGame(player):
                 blockedReason = result
             
     
+import random
 
 pName = getAString("Time to Create a Character\n\nName your Character:", 3, 20)
 print ("Good\nYou have chosen the name: ", pName)
 player = Player(pName)
 player.display()
 
-mp1 = Map(60,20)
+# doornames (all will be used) and potential (minx,miny) locations (not all used)
+doorList = ["Blue","Red","Ancient","Golden","Ethereal","Rose","Glass"]
+houseCorners = [(12,2), (20,2), (30,10), (42,2), (52,6), (2,16), (11,12), (23,16), (41,15), (50,14)]
 
-# Blue House
-doorway = mp1.makeHouse(4,10,8,14,False,True,False,False)[0]
-mp1.addMapObject(doorway, LockedDoor("Blue Door", Colors.LIGHT_CYAN) )
-mp1.addMapObject((57,2),Key("Blue Key", "Blue Door"))
+mp1 = Map(60,25)
+#Start House
+xS = 9 #random.randrange(3,10)
+yS = 8 #random.randrange(3,9)
+drDir = random.randrange(1,3)
+doorway = mp1.makeHouse(0,0,xS,yS,False,drDir==1,drDir==2,False)[0]
+mp1.addMapObject(doorway, LockedDoor("Wood Door", Colors.BROWN) )
+mp1.addMapObject((random.randrange(2,xS),random.randrange(2,yS)),Key("Wooden Key", "Wood Door"))
 
-# Red House
-doorway = mp1.makeHouse(40,14,44,18,True,False,False,False)[0]
-mp1.addMapObject(doorway, LockedDoor("Red Door", Colors.LIGHT_RED) )
-mp1.addMapObject((6,12),Key("Red Key", "Red Door"))
+hiddenObject = None
+while len(doorList):
+    doorName = doorList.pop(random.randrange(0,len(doorList)))
+    houseFirstCorner = houseCorners.pop(random.randrange(0,len(houseCorners)))
+    # place house
+    xS = 6 #random.randrange(3,7)
+    yS = 6 #random.randrange(3,7)
+    houseSecondCorner = (houseFirstCorner[0]+xS, houseFirstCorner[1]+yS)
+    drDir = random.randrange(1,5)
+    doorway = mp1.makeHouse(houseFirstCorner[0],houseFirstCorner[1],houseSecondCorner[0],houseSecondCorner[1],\
+                            drDir==1,drDir==2,drDir==3,drDir==4)[0]
+    mp1.addMapObject(doorway, LockedDoor(doorName+" Door", Colors.BROWN) )
+    if hiddenObject == None:
+        # hide the victory spot here
+        mp1.setVictoryPoint(houseFirstCorner[0]+int(xS/2),houseFirstCorner[1]+int(yS/2))
+    else:
+        mp1.addMapObject((houseFirstCorner[0]+int(xS/2),houseFirstCorner[1]+int(yS/2)), hiddenObject)
+    hiddenObject = Key(doorName+" Key", doorName+" Door")
 
+        
+# key must be out in the open, not in any house
+success = False
+while not success:
+    x = random.randrange(1,mp1.x-1)
+    y = random.randrange(1,mp1.y-1)
+    if not mp1.isInAnyHouse(x,y):
+        mp1.addMapObject((x,y), hiddenObject)
+        success = True
+        
 player.move(1,1)
 
 runGame(player)
