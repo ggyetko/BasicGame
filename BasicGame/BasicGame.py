@@ -395,8 +395,8 @@ houseCorners = [(12,2), (20,2), (30,10), (42,2), (52,6), (2,16), (11,12), (23,16
 
 mp1 = Map(60,25)
 #Start House
-xS = 9 #random.randrange(3,10)
-yS = 8 #random.randrange(3,9)
+xS = random.randrange(3,10)
+yS = random.randrange(3,9)
 drDir = random.randrange(1,3)
 doorway = mp1.makeHouse(0,0,xS,yS,False,drDir==1,drDir==2,False)[0]
 mp1.addMapObject(doorway, LockedDoor("Wood Door", Colors.BROWN) )
@@ -407,8 +407,8 @@ while len(doorList):
     doorName = doorList.pop(random.randrange(0,len(doorList)))
     houseFirstCorner = houseCorners.pop(random.randrange(0,len(houseCorners)))
     # place house
-    xS = 6 #random.randrange(3,7)
-    yS = 6 #random.randrange(3,7)
+    xS = random.randrange(3,7)
+    yS = random.randrange(3,7)
     houseSecondCorner = (houseFirstCorner[0]+xS, houseFirstCorner[1]+yS)
     drDir = random.randrange(1,5)
     doorway = mp1.makeHouse(houseFirstCorner[0],houseFirstCorner[1],houseSecondCorner[0],houseSecondCorner[1],\
